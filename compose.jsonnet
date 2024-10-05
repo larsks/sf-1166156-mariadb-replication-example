@@ -3,6 +3,7 @@
 // docker run -e TZ=America/Denver --name mariadb3 --network=camino_nw -e MARIADB_SERVER_ID=3 -e MARIADB_LOG_BIN=mysql-bin -e MARIADB_LOG_BASENAME=mariadb3 -e MARIADB_BINLOG_FORMAT=mixed -p 127.0.0.1:53303:3306 -v /home/jcz/Documents/dockerMariadbData3:/var/lib/mysql:z -e MARIADB_ROOT_PASSWORD=S3cretPw -d mariadb:latest
 
 local nodes = 3;
+local add_healthchecks = false;
 
 local node(id) = {
   environment: {
@@ -27,6 +28,7 @@ local node(id) = {
     '--log-basename=mariadb%d' % id,
     '--binlog-format=mixed',
   ] else [],
+} + if add_healthchecks then {
   healthcheck: {
     test: ['CMD', 'healthcheck.sh', '--su-mysql', '--connect', '--innodb_initialized'],
     start_period: '30s',
@@ -34,13 +36,14 @@ local node(id) = {
     retries: '3',
     timeout: '30s',
   },
-} + if id != 1 then {
+} else {} + if add_healthchecks && id != 1 then {
   depends_on: {
     mariadb1: {
       condition: 'service_healthy',
     },
   },
-} else {};
+} else {}
+;
 
 {
   services:

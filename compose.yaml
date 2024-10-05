@@ -11,17 +11,6 @@ services:
       MARIADB_REPLICATION_USER: ${MARIADB_REPLICATION_USER}
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       TZ: ${TZ}
-    healthcheck:
-      interval: 10s
-      retries: '3'
-      start_period: 30s
-      test:
-        - CMD
-        - healthcheck.sh
-        - --su-mysql
-        - --connect
-        - --innodb_initialized
-      timeout: 30s
     hostname: mariadb1
     image: mariadb:10
     ports:
@@ -31,9 +20,6 @@ services:
   mariadb2:
     command:
       - --server-id=2
-    depends_on:
-      mariadb1:
-        condition: service_healthy
     environment:
       MARIADB_MASTER_HOST: ${MARIADB_MASTER_HOST}
       MARIADB_MYSQL_LOCALHOST_USER: 'yes'
@@ -41,17 +27,6 @@ services:
       MARIADB_REPLICATION_USER: ${MARIADB_REPLICATION_USER}
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       TZ: ${TZ}
-    healthcheck:
-      interval: 10s
-      retries: '3'
-      start_period: 30s
-      test:
-        - CMD
-        - healthcheck.sh
-        - --su-mysql
-        - --connect
-        - --innodb_initialized
-      timeout: 30s
     hostname: mariadb2
     image: mariadb:10
     ports:
@@ -61,9 +36,6 @@ services:
   mariadb3:
     command:
       - --server-id=3
-    depends_on:
-      mariadb1:
-        condition: service_healthy
     environment:
       MARIADB_MASTER_HOST: ${MARIADB_MASTER_HOST}
       MARIADB_MYSQL_LOCALHOST_USER: 'yes'
@@ -71,17 +43,6 @@ services:
       MARIADB_REPLICATION_USER: ${MARIADB_REPLICATION_USER}
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       TZ: ${TZ}
-    healthcheck:
-      interval: 10s
-      retries: '3'
-      start_period: 30s
-      test:
-        - CMD
-        - healthcheck.sh
-        - --su-mysql
-        - --connect
-        - --innodb_initialized
-      timeout: 30s
     hostname: mariadb3
     image: mariadb:10
     ports:
