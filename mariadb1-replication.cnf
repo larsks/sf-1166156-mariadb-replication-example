@@ -1,5 +1,0 @@
-[mariadb]
-log-bin
-server_id=1
-log-basename=mariadb1
-binlog-format=mixed

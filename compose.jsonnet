@@ -15,11 +15,17 @@ local node(id) = {
   image: 'mariadb:10',
   volumes: [
     'mariadb%d:/var/lib/mysql' % id,
-    './mariadb%d-replication.cnf:/etc/mysql/mariadb.conf.d/replication.cnf' % id,
   ],
   ports: [
     '127.0.0.1:%d:3306' % (3000 + id),
   ],
+  command: [
+    '--server-id=%d' % id,
+  ] + if id == 1 then [
+    '--log-bin',
+    '--log-basename=mariadb%d' % id,
+    '--binlog-format=mixed',
+  ] else [],
 };
 
 {

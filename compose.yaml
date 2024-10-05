@@ -1,5 +1,10 @@
 services:
   mariadb1:
+    command:
+      - --server-id=1
+      - --log-bin
+      - --log-basename=mariadb1
+      - --binlog-format=mixed
     environment:
       MARIADB_REPLICATION_PASSWORD: ${MARIADB_REPLICATION_PASSWORD}
       MARIADB_REPLICATION_USER: ${MARIADB_REPLICATION_USER}
@@ -11,8 +16,9 @@ services:
       - 127.0.0.1:3001:3306
     volumes:
       - mariadb1:/var/lib/mysql
-      - ./mariadb1-replication.cnf:/etc/mysql/mariadb.conf.d/replication.cnf
   mariadb2:
+    command:
+      - --server-id=2
     environment:
       MARIADB_MASTER_HOST: ${MARIADB_MASTER_HOST}
       MARIADB_REPLICATION_PASSWORD: ${MARIADB_REPLICATION_PASSWORD}
@@ -25,8 +31,9 @@ services:
       - 127.0.0.1:3002:3306
     volumes:
       - mariadb2:/var/lib/mysql
-      - ./mariadb2-replication.cnf:/etc/mysql/mariadb.conf.d/replication.cnf
   mariadb3:
+    command:
+      - --server-id=3
     environment:
       MARIADB_MASTER_HOST: ${MARIADB_MASTER_HOST}
       MARIADB_REPLICATION_PASSWORD: ${MARIADB_REPLICATION_PASSWORD}
@@ -39,7 +46,6 @@ services:
       - 127.0.0.1:3003:3306
     volumes:
       - mariadb3:/var/lib/mysql
-      - ./mariadb3-replication.cnf:/etc/mysql/mariadb.conf.d/replication.cnf
 volumes:
   mariadb1: null
   mariadb2: null
