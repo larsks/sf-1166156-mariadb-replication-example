@@ -1,8 +1,7 @@
-// docker run -e TZ=America/Denver --name mariadb1 --network=camino_nw -e MARIADB_SERVER_ID=1 -e MARIADB_LOG_BIN=mysql-bin -e MARIADB_LOG_BASENAME=mariadb1 -e MARIADB_BINLOG_FORMAT=mixed -p 127.0.0.1:53301:3306 -v /home/jcz/Documents/dockerMariadbData1:/var/lib/mysql:z -e MARIADB_ROOT_PASSWORD=S3cretPw -d mariadb:latest
-// docker run -e TZ=America/Denver --name mariadb2 --network=camino_nw -e MARIADB_SERVER_ID=2 -e MARIADB_LOG_BIN=mysql-bin -e MARIADB_LOG_BASENAME=mariadb2 -e MARIADB_BINLOG_FORMAT=mixed -p 127.0.0.1:53302:3306 -v /home/jcz/Documents/dockerMariadbData2:/var/lib/mysql:z -e MARIADB_ROOT_PASSWORD=S3cretPw -d mariadb:latest
-// docker run -e TZ=America/Denver --name mariadb3 --network=camino_nw -e MARIADB_SERVER_ID=3 -e MARIADB_LOG_BIN=mysql-bin -e MARIADB_LOG_BASENAME=mariadb3 -e MARIADB_BINLOG_FORMAT=mixed -p 127.0.0.1:53303:3306 -v /home/jcz/Documents/dockerMariadbData3:/var/lib/mysql:z -e MARIADB_ROOT_PASSWORD=S3cretPw -d mariadb:latest
+local node_count = 3;
 
-local nodes = 3;
+// set add_healthchecks to true to add healthchecks and dependencies to ensure that the primary
+// always starts before the replicas. This does not appear to be necessary in practice.
 local add_healthchecks = false;
 
 local node(id) = {
@@ -47,7 +46,7 @@ local node(id) = {
 
 {
   services:
-    { ['mariadb%d' % id]: node(id) for id in std.range(1, nodes) },
+    { ['mariadb%d' % id]: node(id) for id in std.range(1, node_count) },
   volumes:
-    { ['mariadb%d' % id]: null for id in std.range(1, nodes) },
+    { ['mariadb%d' % id]: null for id in std.range(1, node_count) },
 }
