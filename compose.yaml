@@ -1,0 +1,46 @@
+services:
+  mariadb1:
+    environment:
+      MARIADB_REPLICATION_PASSWORD: ${MARIADB_REPLICATION_PASSWORD}
+      MARIADB_REPLICATION_USER: ${MARIADB_REPLICATION_USER}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      TZ: ${TZ}
+    hostname: mariadb1
+    image: mariadb:10
+    ports:
+      - 127.0.0.1:3001:3306
+    volumes:
+      - mariadb1:/var/lib/mysql
+      - ./mariadb1-replication.cnf:/etc/mysql/mariadb.conf.d/replication.cnf
+  mariadb2:
+    environment:
+      MARIADB_MASTER_HOST: ${MARIADB_MASTER_HOST}
+      MARIADB_REPLICATION_PASSWORD: ${MARIADB_REPLICATION_PASSWORD}
+      MARIADB_REPLICATION_USER: ${MARIADB_REPLICATION_USER}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      TZ: ${TZ}
+    hostname: mariadb2
+    image: mariadb:10
+    ports:
+      - 127.0.0.1:3002:3306
+    volumes:
+      - mariadb2:/var/lib/mysql
+      - ./mariadb2-replication.cnf:/etc/mysql/mariadb.conf.d/replication.cnf
+  mariadb3:
+    environment:
+      MARIADB_MASTER_HOST: ${MARIADB_MASTER_HOST}
+      MARIADB_REPLICATION_PASSWORD: ${MARIADB_REPLICATION_PASSWORD}
+      MARIADB_REPLICATION_USER: ${MARIADB_REPLICATION_USER}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      TZ: ${TZ}
+    hostname: mariadb3
+    image: mariadb:10
+    ports:
+      - 127.0.0.1:3003:3306
+    volumes:
+      - mariadb3:/var/lib/mysql
+      - ./mariadb3-replication.cnf:/etc/mysql/mariadb.conf.d/replication.cnf
+volumes:
+  mariadb1: null
+  mariadb2: null
+  mariadb3: null
