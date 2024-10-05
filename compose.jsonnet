@@ -1,17 +1,11 @@
-local node_count = 3;
-
-// set add_healthchecks to true to add healthchecks and dependencies to ensure that the primary
-// always starts before the replicas. This does not appear to be necessary in practice.
-local add_healthchecks = false;
-
-local node(id) = {
+local node(id, add_healthchecks=false) = {
   environment: {
     TZ: '${TZ}',
     MARIADB_ROOT_PASSWORD: '${MARIADB_ROOT_PASSWORD}',
     MARIADB_REPLICATION_USER: '${MARIADB_REPLICATION_USER}',
     MARIADB_REPLICATION_PASSWORD: '${MARIADB_REPLICATION_PASSWORD}',
     MARIADB_MYSQL_LOCALHOST_USER: 'yes',
-  } + if id != 1 then { MARIADB_MASTER_HOST: '${MARIADB_MASTER_HOST}' } else {},
+  },
   hostname: 'mariadb%d' % id,
   image: 'mariadb:10',
   volumes: [
@@ -22,11 +16,7 @@ local node(id) = {
   ],
   command: [
     '--server-id=%d' % id,
-  ] + if id == 1 then [
-    '--log-bin',
-    '--log-basename=mariadb%d' % id,
-    '--binlog-format=mixed',
-  ] else [],
+  ],
 } + if add_healthchecks then {
   healthcheck: {
     test: ['CMD', 'healthcheck.sh', '--su-mysql', '--connect', '--innodb_initialized'],
@@ -35,18 +25,35 @@ local node(id) = {
     retries: '3',
     timeout: '30s',
   },
-} else {} + if add_healthchecks && id != 1 then {
+} else {};
+
+local primary(add_healthchecks=false) = node(1, add_healthchecks=add_healthchecks) {
+  command+: [
+    '--log-bin',
+    '--log-basename=mariadb1',
+    '--binlog-format=mixed',
+  ],
+};
+
+local replica(id, add_healthchecks=false) = node(id, add_healthchecks=add_healthchecks) {
+  environment+: {
+    MARIADB_MASTER_HOST: '${MARIADB_MASTER_HOST}',
+  },
+} + if add_healthchecks then {
   depends_on: {
     mariadb1: {
       condition: 'service_healthy',
     },
   },
-} else {}
-;
+} else {};
 
-{
-  services:
-    { ['mariadb%d' % id]: node(id) for id in std.range(1, node_count) },
-  volumes:
-    { ['mariadb%d' % id]: null for id in std.range(1, node_count) },
-}
+function(replica_count=2, add_healthchecks=false)
+  {
+    services:
+      {
+        mariadb1: primary(add_healthchecks=add_healthchecks),
+      } + { ['mariadb%d' % (id + 1)]: replica(id + 1, add_healthchecks=add_healthchecks) for id in std.range(1, replica_count) },
+    volumes: {
+      mariadb1: null,
+    } + { ['mariadb%d' % (id + 1)]: null for id in std.range(1, replica_count) },
+  }
