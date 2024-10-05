@@ -10,6 +10,7 @@ local node(id) = {
     MARIADB_ROOT_PASSWORD: '${MARIADB_ROOT_PASSWORD}',
     MARIADB_REPLICATION_USER: '${MARIADB_REPLICATION_USER}',
     MARIADB_REPLICATION_PASSWORD: '${MARIADB_REPLICATION_PASSWORD}',
+    MARIADB_MYSQL_LOCALHOST_USER: 'yes',
   } + if id != 1 then { MARIADB_MASTER_HOST: '${MARIADB_MASTER_HOST}' } else {},
   hostname: 'mariadb%d' % id,
   image: 'mariadb:10',
@@ -26,7 +27,20 @@ local node(id) = {
     '--log-basename=mariadb%d' % id,
     '--binlog-format=mixed',
   ] else [],
-};
+  healthcheck: {
+    test: ['CMD', 'healthcheck.sh', '--su-mysql', '--connect', '--innodb_initialized'],
+    start_period: '30s',
+    interval: '10s',
+    retries: '3',
+    timeout: '30s',
+  },
+} + if id != 1 then {
+  depends_on: {
+    mariadb1: {
+      condition: 'service_healthy',
+    },
+  },
+} else {};
 
 {
   services:
