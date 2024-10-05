@@ -1,4 +1,18 @@
-local node(id, add_healthchecks=false) = {
+/*
+ * To generate compose.yaml from this file:
+ *
+ *     jsonnet -o compose.yaml compose.jsonnet
+ *
+ * To enable healthchecks and service dependencies:
+ *
+ *     jsonnet -o compose.yaml compose.jsonnet --tla-code enable_healthchecks=true
+ *
+ * To select a different base port for host port mapping:
+ *
+ *     jsonnet -o compose.yaml compose.jsonnet --tla-code base_port=55300
+ *
+ */
+local node(id, enable_healthchecks=false, base_port=3000) = {
   environment: {
     TZ: '${TZ}',
     MARIADB_ROOT_PASSWORD: '${MARIADB_ROOT_PASSWORD}',
@@ -12,12 +26,12 @@ local node(id, add_healthchecks=false) = {
     'mariadb%d:/var/lib/mysql' % id,
   ],
   ports: [
-    '127.0.0.1:%d:3306' % (3000 + id),
+    '127.0.0.1:%d:3306' % (base_port + id),
   ],
   command: [
     '--server-id=%d' % id,
   ],
-} + if add_healthchecks then {
+} + if enable_healthchecks then {
   healthcheck: {
     test: ['CMD', 'healthcheck.sh', '--su-mysql', '--connect', '--innodb_initialized'],
     start_period: '30s',
@@ -27,7 +41,7 @@ local node(id, add_healthchecks=false) = {
   },
 } else {};
 
-local primary(add_healthchecks=false) = node(1, add_healthchecks=add_healthchecks) {
+local primary(enable_healthchecks=false, base_port=3000) = node(1, enable_healthchecks=enable_healthchecks, base_port=base_port) {
   command+: [
     '--log-bin',
     '--log-basename=mariadb1',
@@ -35,11 +49,11 @@ local primary(add_healthchecks=false) = node(1, add_healthchecks=add_healthcheck
   ],
 };
 
-local replica(id, add_healthchecks=false) = node(id, add_healthchecks=add_healthchecks) {
+local replica(id, enable_healthchecks=false, base_port=3000) = node(id, enable_healthchecks=enable_healthchecks, base_port=base_port) {
   environment+: {
     MARIADB_MASTER_HOST: '${MARIADB_MASTER_HOST}',
   },
-} + if add_healthchecks then {
+} + if enable_healthchecks then {
   depends_on: {
     mariadb1: {
       condition: 'service_healthy',
@@ -47,12 +61,15 @@ local replica(id, add_healthchecks=false) = node(id, add_healthchecks=add_health
   },
 } else {};
 
-function(replica_count=2, add_healthchecks=false)
+function(replica_count=2, enable_healthchecks=false, base_port=3000)
   {
     services:
       {
-        mariadb1: primary(add_healthchecks=add_healthchecks),
-      } + { ['mariadb%d' % (id + 1)]: replica(id + 1, add_healthchecks=add_healthchecks) for id in std.range(1, replica_count) },
+        mariadb1: primary(enable_healthchecks=enable_healthchecks, base_port=base_port),
+      } + {
+        ['mariadb%d' % (id + 1)]: replica(id + 1, enable_healthchecks=enable_healthchecks, base_port=base_port)
+        for id in std.range(1, replica_count)
+      },
     volumes: {
       mariadb1: null,
     } + { ['mariadb%d' % (id + 1)]: null for id in std.range(1, replica_count) },
