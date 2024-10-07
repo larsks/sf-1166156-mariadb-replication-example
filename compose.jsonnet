@@ -23,7 +23,6 @@ local node(id, enable_healthchecks=false, base_port=3000) = {
     MARIADB_ROOT_PASSWORD: '${MARIADB_ROOT_PASSWORD}',
     MARIADB_REPLICATION_USER: '${MARIADB_REPLICATION_USER}',
     MARIADB_REPLICATION_PASSWORD: '${MARIADB_REPLICATION_PASSWORD}',
-    MARIADB_MYSQL_LOCALHOST_USER: 'yes',
   },
   hostname: 'mariadb%d' % id,
   image: 'mariadb:10',
@@ -37,6 +36,9 @@ local node(id, enable_healthchecks=false, base_port=3000) = {
     '--server-id=%d' % id,
   ],
 } + if enable_healthchecks then {
+  environment+: {
+    MARIADB_MYSQL_LOCALHOST_USER: 'yes',
+  },
   healthcheck: {
     test: ['CMD', 'healthcheck.sh', '--su-mysql', '--connect', '--innodb_initialized'],
     start_period: '30s',
