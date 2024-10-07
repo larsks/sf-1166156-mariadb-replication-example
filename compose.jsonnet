@@ -1,4 +1,4 @@
-/*
+/***********************************************************************
  * To generate compose.yaml from this file:
  *
  *     jsonnet -o compose.yaml compose.jsonnet
@@ -10,7 +10,12 @@
  * To select a different base port for host port mapping:
  *
  *     jsonnet -o compose.yaml compose.jsonnet --tla-code base_port=55300
- *
+ ***********************************************************************/
+
+
+/*
+ * This generates the service entry for a mariadb server. It contains the common configuration used
+ * by both the primary(...) and replica(...) functions, below.
  */
 local node(id, enable_healthchecks=false, base_port=3000) = {
   environment: {
@@ -41,6 +46,10 @@ local node(id, enable_healthchecks=false, base_port=3000) = {
   },
 } else {};
 
+/*
+ * This function generates the service entry for the primary server; it appends
+ * the command line arguments necessary to successfully enable replication.
+ */
 local primary(enable_healthchecks=false, base_port=3000) = node(1, enable_healthchecks=enable_healthchecks, base_port=base_port) {
   command+: [
     '--log-bin',
@@ -49,6 +58,11 @@ local primary(enable_healthchecks=false, base_port=3000) = node(1, enable_health
   ],
 };
 
+/*
+ * This function generates the service entry for the replicas. We set the MARIADB_MASTER_HOST environment variable,
+ * which is used by the container image to automatically configure replication (along with the MARIADB_REPLICATION_USER and
+ * MARIADB_REPLICATION_PASSWORD variables, which are set for all service entries).
+ */
 local replica(id, enable_healthchecks=false, base_port=3000) = node(id, enable_healthchecks=enable_healthchecks, base_port=base_port) {
   environment+: {
     MARIADB_MASTER_HOST: '${MARIADB_MASTER_HOST}',
