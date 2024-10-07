@@ -1,4 +1,7 @@
 all: compose.yaml
 
 compose.yaml: compose.jsonnet
-	jsonnet $< | yq -y > $@ || { rm -f $@; exit 1; }
+	jsonnet $(JSONNET_ARGS) $< | yq -y > $@ || { rm -f $@; exit 1; }
+
+clean:
+	rm -f compose.yaml
